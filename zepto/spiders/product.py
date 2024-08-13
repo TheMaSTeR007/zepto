@@ -1,11 +1,13 @@
+import json
+import os.path
+import time
 from typing import Iterable
+import pandas as pd
 
 import pymysql
 import scrapy
 from scrapy import Request
 from scrapy.cmdline import execute
-from zepto.customCookies import cookies_list
-
 from zepto.items import ZeptoItem
 
 
@@ -49,8 +51,10 @@ class ProductSpider(scrapy.Spider):
 
     # allowed_domains = ["xyz.com"]
     # start_urls = ["https://xyz.com"]
-    def __init__(self):
+    def __init__(self, start_id=None, end_id=None):
         super().__init__()
+        self.start_id = int(start_id)
+        self.end_id = int(end_id)
 
         # Connect to the MySQL database
         self.client = pymysql.Connect(
@@ -68,53 +72,42 @@ class ProductSpider(scrapy.Spider):
         # self.cursor.execute(query=fetch_query)
         # rows = self.cursor.fetchall()
         # print(f'Fetched {len(rows)} data.')
-        rows = [
-            'https://www.zeptonow.com/pn/nandini-fresh-toned-fresh-milk-pouch-blue/pvid/25eb526c-9c26-48cd-95a3-8e4058910f8a',
-            'https://www.zeptonow.com/pn/deep-rooted-residue-free-amaranthus-green/pvid/afc7b9b8-99b4-4f64-8653-cd0d45edaf7e',
-            'https://www.zeptonow.com/pn/adidas-india-cricket-t20-fan-mens-100-recycled-polyester-jersey-l-heatrdy/pvid/460cba41-a438-4592-a2a0-81438b76c503',
-            'https://www.zeptonow.com/pn/classic-connect-cigarette/pvid/80f5c93c-8302-41b5-85f5-4c1ba12e4306',
-            'https://www.zeptonow.com/pn/doms-x1-pencil-10-pc-x-2-combo/pvid/ac4946a8-0b66-411d-801c-ac3c4c2c1894',
-            'https://www.zeptonow.com/pn/youbella-women-stylish-latest-design-trendy-multi-layer-necklace-jewellery-gold-plated-multi-strand/pvid/4b4cd0ef-8d9e-4f7f-a8e1-7db59e5c569d',
-            'https://www.zeptonow.com/pn/teal-by-chumbak-ombre-aztec-watch-white/pvid/f4b38290-9733-45b9-8c87-b0bf7501783b',
-            'https://www.zeptonow.com/pn/disney-frozen-2-printed-headband-blue/pvid/0f562afc-79ba-467a-8964-57fd46dc2496',
-            'https://www.zeptonow.com/pn/mens-chain-black/pvid/a2739303-8c84-471a-97b5-10aeb7bf4c81',
-            'https://www.zeptonow.com/pn/blue-stone-mens-chain-bracelet-silver/pvid/51399c84-9be3-44fc-a8a7-57b76f7ba2f1',
-            'https://www.zeptonow.com/pn/youbella-jewellery-organiser-pu-leather-zipper-portable-storage-box-case-style-2-pink/pvid/9e4ca9ee-152a-43aa-bfaf-5b3bf3fef3fa',
-            'https://www.zeptonow.com/pn/just-herbs-party-ready-nail-paint-set/pvid/3b26af0b-03ee-4c51-86ad-88833ccbd6b2',
-            'https://www.zeptonow.com/pn/sugar-super-shimmer-kit-pack-of-5/pvid/8b4cc8e1-efc3-4766-a256-63835dce6622',
-            'https://www.zeptonow.com/pn/renee-bold-4-4-in-1-kajal/pvid/70922f37-76b3-4075-a3a3-fdadf06c4c31',
-            'https://www.zeptonow.com/pn/sheba-rich-skipjack-salmon-in-sasami-wet-cat-food/pvid/727be53e-6979-46a0-9a78-48038dc88f35',
-            'https://www.zeptonow.com/pn/nootie-training-pads45x6010pcs/pvid/f809ba67-b3c0-41b9-b14a-3a53f1ff8985',
-            'https://www.zeptonow.com/pn/kama-sutra-ultra-thin-condoms/pvid/cc9c9967-ff87-464a-bb59-2dc0d002cef9',
-            'https://www.zeptonow.com/pn/carlton-london-women-blush-deodorant/pvid/83b78563-a616-4ca8-8177-8fd7f99d74e9',
-            'https://www.zeptonow.com/pn/svish-hair-removal-spray-for-men-made-safe-certified/pvid/b61ead42-ba2e-4acd-906e-f41908765d8b',
-            'https://www.zeptonow.com/pn/tide-jasmine-rose-detergent-powder/pvid/72320d9c-f67f-4f87-9643-1f3f147d7f7f',
-            'https://www.zeptonow.com/pn/la-carne-chicken-piri-piri/pvid/d02b5699-763b-4bf0-b3f3-1e943cec202f',
-            'https://www.zeptonow.com/pn/relish-chicken-breast-boneless500gms-relish-chicken-drumstick1pc-combo/pvid/91aa288d-1deb-41c5-a359-2a40590c0ac2'
-        ]
-        print(len(rows))
-        cookies = cookies_list
-        cookie_count = 1
-        for product_url in rows:
-            # product_url = row[999]  # Assuming the URL is in the third column
-            print('Working on:', product_url)
-            for cookie in cookies:
+
+        product_urls = pd.read_excel(io=r'C:\Users\jaimin.gurjar\Downloads\zepto_grocery.xlsx', sheet_name=' zepto')['Zepto '].dropna()[self.start_id: self.end_id]
+        # product_urls = pd.read_excel(io=r'C:\Users\jaimin.gurjar\Downloads\zepto_grocery.xlsx', sheet_name=' zepto')['Zepto '].dropna()[:10]
+        print('Heloooo')
+        cookies_json_path = os.path.join(r'C:\Users\jaimin.gurjar\Actowiz Training Projects (using Scrapy)\zepto\zepto', 'cookies_json.json')
+        with open(cookies_json_path, 'r') as file:
+            list_of_cookies = json.loads(file.read())
+        print('Cookies read done... !!')
+        cookies_list = list_of_cookies
+        print('Byeeee')
+        print(len(product_urls))
+        for product_url in product_urls:
+            print('Working on: ', product_url)
+            cookie_count = 1
+            for cookie_data in cookies_list:
+                cookie_dict = cookie_data['cookie_dict']
+                pincode = cookie_data['pincode']
                 # Yield a new request for each URL, which Scrapy will process asynchronously
                 yield scrapy.Request(
                     url=product_url,
                     method='GET',
-                    cookies=cookie,
                     callback=self.parse,  # The parse method will handle the response
                     dont_filter=True,
+                    cookies=cookie_dict,
                     meta={
-                        'count': cookie_count
+                        "impersonate": "chrome110",
+                        "count": cookie_count,
+                        "pincode": pincode
                     }
                 )
                 cookie_count += 1
 
     def parse(self, response):
-        count = response.meta['count']
-        print('Cookie no:', count)
+        cookie_num = response.meta['count']
+        pincode = response.meta['pincode']
+        print('using cookie:', cookie_num)
         print('response url:', response.url)
         product_url = get_product_url(response)
         product_name = get_product_name(response)
@@ -123,12 +116,23 @@ class ProductSpider(scrapy.Spider):
         discount = get_discount(response)
         product_mrp = get_product_mrp(response)
 
+        Zepto_Data_Item = ZeptoItem()
+        Zepto_Data_Item['product_url'] = product_url
+        Zepto_Data_Item['product_name'] = product_name
+        Zepto_Data_Item['availability'] = availability
+        Zepto_Data_Item['product_price'] = product_price
+        Zepto_Data_Item['discount'] = discount
+        Zepto_Data_Item['product_mrp'] = product_mrp
+        Zepto_Data_Item['pincode'] = pincode
+
         print(product_url)
         print(product_name)
         print(availability)
         print(product_price)
         print(discount)
         print(product_mrp)
+        print(pincode)
+        yield Zepto_Data_Item
         print('-' * 100)
 
 
